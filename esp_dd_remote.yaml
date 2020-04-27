@@ -1,0 +1,104 @@
+esphome:
+  name: esp_dd_remote
+  platform: ESP8266
+  board: nodemcu
+
+wifi:
+  domain: .local
+  networks:
+  - ssid: "htrn"
+    password: "2767287685"
+  - ssid: "Upstairs"
+    password: "2767287685"
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: "foofoodd"
+
+ota:
+  password: "foofoodd"
+
+binary_sensor:
+  - platform: gpio
+    name: dd_remote_button_1
+    pin:
+      number: D1
+      mode: INPUT_PULLUP
+      inverted: True
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+  - platform: gpio
+    name: dd_remote_button_2
+    pin:
+      number: D5
+      mode: INPUT_PULLUP
+      inverted: True
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+  - platform: gpio
+    name: dd_remote_button_3
+    pin:
+      number: D7
+      mode: INPUT_PULLUP
+      inverted: True
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+  - platform: gpio
+    name: dd_remote_button_4
+    pin:
+      number: D6
+      mode: INPUT_PULLUP
+      inverted: True
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+  - platform: status
+    name: "DD remote Status"
+        
+sensor:
+  - platform: wifi_signal
+    name: "DD remote WiFi Signal"
+    update_interval: 60s
+  - platform: uptime
+    name: "DD remote uptime seconds"
+    id: uptime_s
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "DD remote IP Address"
+    ssid:
+      name: "DD remote SSID"
+  - platform: template
+    name: "DD remote uptime"
+    lambda: |-
+      uint32_t dur = id(uptime_s).state;
+      int dys = 0;
+      int hrs = 0;
+      int mnts = 0;
+      if (dur > 86399) {
+        dys = trunc(dur / 86400);
+        dur = dur - (dys * 86400);
+      }
+      if (dur > 3599) {
+        hrs = trunc(dur / 3600);
+        dur = dur - (hrs * 3600);
+      }
+      if (dur > 59) {
+        mnts = trunc(dur / 60);
+        dur = dur - (mnts * 60);
+      }
+      char buffer[17];
+      sprintf(buffer, "%ud %02uh %02um %02us", dys, hrs, mnts, dur);
+      return {buffer};
+    icon: mdi:clock-start
+
+switch:
+  - platform: restart
+    name: "DD remote Restart"
