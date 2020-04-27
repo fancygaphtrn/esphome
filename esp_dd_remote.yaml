@@ -16,10 +16,10 @@ logger:
 
 # Enable Home Assistant API
 api:
-  password: "foofoodd"
+  password: "xxxx"
 
 ota:
-  password: "foofoodd"
+  password: "xxxx"
 
 binary_sensor:
   - platform: gpio
