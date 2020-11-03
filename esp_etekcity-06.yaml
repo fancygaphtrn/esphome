@@ -1,5 +1,5 @@
 esphome:
-  name: esp_etekcity_01
+  name: esp_etekcity_06
   platform: ESP8266
   board: esp01_1m
 
@@ -33,7 +33,7 @@ output:
 
 switch:
   - platform: gpio
-    name: "Etekcity_01"
+    name: "Etekcity_06"
     id: switch1
     pin: GPIO4
     restore_mode: RESTORE_DEFAULT_ON
@@ -42,11 +42,11 @@ switch:
     on_turn_off:
       - output.turn_off: led1
   - platform: restart
-    name: "Etekcity_01 Restart"
+    name: "Etekcity_06 Restart"
 
 binary_sensor:
   - platform: status
-    name: "Etekcity_01 Status"
+    name: "Etekcity_06 Status"
   - platform: gpio
     id: button1
     pin:
@@ -58,19 +58,15 @@ binary_sensor:
         
 sensor:
   - platform: wifi_signal
-    name: "Etekcity_01 WiFi Signal"
+    name: "Etekcity_06 WiFi Signal"
     update_interval: 60s
   - platform: uptime
-    name: "Etekcity_01 uptime seconds"
+    name: "Etekcity_06 uptime seconds"
     id: uptime_s
   - platform: pulse_counter
     pin: GPIO12
     id: "gpio12"
     name: "GPIO12 counter"
-    count_mode:
-      rising_edge: DISABLE
-      falling_edge: INCREMENT
-    internal_filter: 13us
     update_interval: 10s
     on_value:
       - sensor.template.publish:
@@ -83,10 +79,6 @@ sensor:
     pin: GPIO13
     id: "gpio13"
     name: "GPIO13 counter"
-    count_mode:
-      rising_edge: DISABLE
-      falling_edge: INCREMENT
-    internal_filter: 13us
     update_interval: 10s
     on_value:
       - sensor.template.publish:
@@ -102,26 +94,26 @@ sensor:
           state: !lambda 'return id(watts).state / id(voltage).state;'
   - platform: template 
     id: voltage
-    name: "Etekcity_01 Voltage"
+    name: "Etekcity_06 Voltage"
     unit_of_measurement: "V"
   - platform: template 
     id: watts
-    name: "Etekcity_01 Watts"
+    name: "Etekcity_06 Watts"
     unit_of_measurement: "W"
   - platform: template 
     id: amps
     unit_of_measurement: "A"
-    name: "Etekcity_01 Amps"
+    name: "Etekcity_06 Amps"
     accuracy_decimals: 3
 
 text_sensor:
   - platform: wifi_info
     ip_address:
-      name: "Etekcity_01 IP Address"
+      name: "Etekcity_06 IP Address"
     ssid:
-      name: "Etekcity_01 SSID"
+      name: "Etekcity_06 SSID"
   - platform: template
-    name: "Etekcity_01 uptime"
+    name: "Etekcity_06 uptime"
     lambda: |-
       uint32_t dur = id(uptime_s).state;
       int dys = 0;
