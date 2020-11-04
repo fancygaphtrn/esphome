@@ -66,7 +66,7 @@ sensor:
   - platform: pulse_counter
     pin: GPIO12
     id: "gpio12"
-    name: "GPIO12 counter"
+    name: "Etekcity_02 GPIO12 counter"
     count_mode:
       rising_edge: DISABLE
       falling_edge: INCREMENT
@@ -82,7 +82,7 @@ sensor:
   - platform: pulse_counter
     pin: GPIO13
     id: "gpio13"
-    name: "GPIO13 counter"
+    name: "Etekcity_02 GPIO13 counter"
     count_mode:
       rising_edge: DISABLE
       falling_edge: INCREMENT
