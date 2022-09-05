@@ -1,0 +1,7 @@
+substitutions:
+  devicename: esp-etekcity-03
+  upper_devicename: Etekcity_03
+  voltage_multiplier: '0.00623'
+  watts_multiplier: '0.07708'
+
+<<: !include etekcity_common.yaml

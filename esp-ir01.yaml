@@ -1,0 +1,88 @@
+esphome:
+  name: esp-ir01
+  platform: ESP8266
+  board: nodemcu
+
+wifi:
+  networks:
+  - ssid: !secret ssid
+    password: !secret wifi_password
+
+#debug:
+
+logger:
+  level: DEBUG
+  
+# Enable Home Assistant API
+api:
+  password: !secret api_password
+
+ota:
+  password: !secret ota_password
+
+sensor:
+  - platform: wifi_signal
+    name: "IR01 WiFi Signal"
+    update_interval: 60s
+  - platform: uptime
+    name: "IR01 uptime seconds"
+    id: uptime_s
+        
+binary_sensor:
+  - platform: status
+    name: "IR01 Status"
+    
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IR01 IP Address"
+    ssid:
+      name: "IR01 SSID"
+  - platform: template
+    name: "IR01 uptime"
+    lambda: |-
+      uint32_t dur = id(uptime_s).state;
+      int dys = 0;
+      int hrs = 0;
+      int mnts = 0;
+      if (dur > 86399) {
+        dys = trunc(dur / 86400);
+        dur = dur - (dys * 86400);
+      }
+      if (dur > 3599) {
+        hrs = trunc(dur / 3600);
+        dur = dur - (hrs * 3600);
+      }
+      if (dur > 59) {
+        mnts = trunc(dur / 60);
+        dur = dur - (mnts * 60);
+      }
+      char buffer[17];
+      sprintf(buffer, "%ud %02uh %02um %02us", dys, hrs, mnts, dur);
+      return {buffer};
+    icon: mdi:clock-start
+
+#remote_receiver:
+#  pin:
+#    number: D5
+#    inverted: yes
+#    mode: INPUT_PULLUP
+#  dump: raw
+
+remote_transmitter:
+  pin: D2
+  # Infrared remotes use a 50% carrier signal
+  carrier_duty_percent: 50%
+  
+switch:
+  - platform: restart
+    name: "IR01 Restart"
+  - platform: template
+    name: IR01 Power
+    turn_on_action:
+      - remote_transmitter.transmit_raw:
+          repeat:
+            times: 3
+            wait_time: 250ms
+          code: [+9024,-4512,+564,-564,+564,-564,+564,-564,+564,-1692,+564,-1692,+564,-1692,+564,-564,+564,-564,+564,-1692,+564,-1692,+564,-1692,+564,-564,+564,-564,+564,-564,+564,-1692,+564,-1692,+564,-564,+564,-1692,+564,-564,+564,-564,+564,-1692,+564,-564,+564,-564,+564,-564,+564,-1692,+564,-564,+564,-1692,+564,-1692,+564,-564,+564,-1692,+564,-1692,+564,-1692,+564,-39756]
+          carrier_frequency: 38kHz

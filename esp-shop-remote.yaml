@@ -1,0 +1,115 @@
+esphome:
+  name: esp-shop-remote
+  platform: ESP8266
+  board: nodemcu
+
+wifi:
+  networks:
+  - ssid: !secret ssid
+    password: !secret wifi_password
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret api_password
+
+ota:
+  password: !secret ota_password
+
+binary_sensor:
+  - platform: gpio
+    name: shop_remote_button_1
+    pin:
+      number: D7
+      mode: INPUT_PULLUP
+      inverted: True
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+  - platform: gpio
+    name: shop_remote_button_2
+    pin:
+      number: D6
+      mode: INPUT_PULLUP
+      inverted: True
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+  - platform: gpio
+    name: shop_remote_button_3
+    pin:
+      number: D1
+      mode: INPUT_PULLUP
+      inverted: True
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+  - platform: gpio
+    name: shop_remote_button_4
+    pin:
+      number: D5
+      mode: INPUT_PULLUP
+      inverted: True
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+  - platform: status
+    name: "Shop remote Status"
+        
+sensor:
+  - platform: dht
+    model: DHT22
+    pin: D2
+    temperature:
+      name: "Shop Temperature"
+      device_class: "temperature"
+      state_class: "measurement"
+      filters:
+        - offset: -2.25
+    humidity:
+      name: "Shop Humidity"
+      device_class: "humidity"
+      state_class: "measurement"
+    update_interval: 60s
+  - platform: wifi_signal
+    name: "Shop remote WiFi Signal"
+    update_interval: 60s
+  - platform: uptime
+    name: "Shop remote uptime seconds"
+    id: uptime_s
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "Shop remote IP Address"
+    ssid:
+      name: "Shop remote SSID"
+  - platform: template
+    name: "Shop remote uptime"
+    lambda: |-
+      uint32_t dur = id(uptime_s).state;
+      int dys = 0;
+      int hrs = 0;
+      int mnts = 0;
+      if (dur > 86399) {
+        dys = trunc(dur / 86400);
+        dur = dur - (dys * 86400);
+      }
+      if (dur > 3599) {
+        hrs = trunc(dur / 3600);
+        dur = dur - (hrs * 3600);
+      }
+      if (dur > 59) {
+        mnts = trunc(dur / 60);
+        dur = dur - (mnts * 60);
+      }
+      char buffer[17];
+      sprintf(buffer, "%ud %02uh %02um %02us", dys, hrs, mnts, dur);
+      return {buffer};
+    icon: mdi:clock-start
+
+switch:
+  - platform: restart
+    name: "Shop remote Restart"
