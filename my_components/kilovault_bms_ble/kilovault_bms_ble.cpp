@@ -21,6 +21,31 @@ static const uint8_t KILOVAULT_ADDRESS = 0x16;
 static const uint8_t KILOVAULT_PKT_END_1 = 0x52;
 static const uint8_t KILOVAULT_PKT_END_2 = 0x52;
 
+bool crc(const std::vector<uint8_t> &data) {
+  auto kilovault_get_8bit = [&](size_t i) -> uint8_t {
+    return ((uint8_t(data[i + 0]) << 4) | (uint8_t(data[i + 1]) << 0));
+  };
+  const uint16_t frame_size = 110; 
+  uint16_t crc = 0;
+
+  //ESP_LOGW(TAG, "CRC data: %s", format_hex_pretty(data).c_str());
+
+  uint16_t remote_crc = (kilovault_get_8bit(frame_size-1) << 8) + kilovault_get_8bit(frame_size+1);
+  //ESP_LOGW(TAG, "Remote CRC  0x%04X", remote_crc);
+
+  for (uint16_t i = 1; i < frame_size - 2; i+=2) {
+    crc = crc + kilovault_get_8bit(i);
+    //ESP_LOGW(TAG, "CRC  0x%04X", crc);
+  }
+  //ESP_LOGW(TAG, "CRC  0x%04X", crc);
+
+  if (crc != remote_crc) {
+    ESP_LOGW(TAG, "CRC check failed! 0x%02X != 0x%02X", crc, remote_crc);
+    return false;
+  }
+  return true;
+}
+
 void KilovaultBmsBle::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                       esp_ble_gattc_cb_param_t *param) {
   switch (event) {
@@ -108,6 +133,11 @@ void KilovaultBmsBle::assemble_(const uint8_t *data, uint16_t length) {
     for(int i=0; i < this->frame_buffer_.size(); i++){
       this->frame_buffer_[i] = asciiToInt(this->frame_buffer_[i]);
     }
+    if (!crc(this->frame_buffer_)) {
+      //ESP_LOGW(TAG, "frame_buffer: %s", format_hex_pretty(this->frame_buffer_).c_str());
+      this->frame_buffer_.clear();
+      return;
+    }
 
     this->on_kilovault_bms_ble_data_(this->frame_buffer_);
     this->frame_buffer_.clear();
@@ -138,6 +168,7 @@ void KilovaultBmsBle::decode_status_data_(const std::vector<uint8_t> &data) {
 
   //ESP_LOGI(TAG, "Status frame (%d+4 bytes):", data.size());
   //ESP_LOGD(TAG, "  %s", format_hex_pretty(&data.front(), data.size()).c_str());
+  this->publish_state_(this->message_text_sensor_, format_hex_pretty(&data.front(), 80).c_str());
 
   int32_t current = kilovault_get_32bit(9);
   if (current > 2147483647) {
@@ -239,6 +270,7 @@ void KilovaultBmsBle::dump_config() {  // NOLINT(google-readability-function-siz
   LOG_SENSOR("", "Cell Voltage 4", this->cells_[3].cell_voltage_sensor_);
 
   LOG_TEXT_SENSOR("", "Battery MAC", this->battery_mac_text_sensor_);
+  LOG_TEXT_SENSOR("", "Message", this->message_text_sensor_);
 }
 
 void KilovaultBmsBle::publish_state_(binary_sensor::BinarySensor *binary_sensor, const bool &state) {
