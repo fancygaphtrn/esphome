@@ -1,0 +1,158 @@
+    
+ble_client:
+  - mac_address: ${mac_address}
+    id: client${device}
+    on_connect:
+      then:
+        - lambda: |-
+            ESP_LOGD("${short_name} ${mac_address}", "Connected to BLE device");
+    on_disconnect:
+      then:
+        - lambda: |-
+            ESP_LOGD("${short_name} ${mac_address}", "Disconnected from BLE device");
+            if (id(ble_client_switch${device}).state) {
+              id(ble_client_switch${device}).turn_off();
+              id(ble_client_switch${device}).turn_on();
+            }
+
+kilovault_bms_ble:
+  - ble_client_id: client${device}
+    id: bms${device}
+    update_interval: 10s
+
+sensor:
+  - platform: total_daily_energy
+    name: "${short_name} Total Daily Energy battery in"
+    power_id: charging_power${device}
+    filters:
+        - multiply: 0.001
+    unit_of_measurement: kWh
+    device_class: energy
+  - platform: total_daily_energy
+    name: "${short_name} Total Daily Energy battery out"
+    power_id: discharging_power${device}
+    filters:
+        - multiply: 0.001
+    unit_of_measurement: kWh
+    device_class: energy
+  - platform: kilovault_bms_ble
+    kilovault_bms_ble_id: bms${device}
+    voltage:
+      name: "${short_name} voltage"
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+    current:
+      name: "${short_name} current"
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+    power:
+      name: "${short_name} power"
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+    charging_power:
+      name: "${short_name} charging power"
+      id: charging_power${device}
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+    discharging_power:
+      name: "${short_name} discharging power"
+      id: discharging_power${device}
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+    cycles:
+      name: "${short_name} cycles"
+      filters:
+        - throttle: 60s
+    state_of_charge:
+      name: "${short_name} state of charge"
+      filters:
+        - throttle: 60s
+    total_capacity:
+      name: "${short_name} total capacity"
+      filters:
+        - throttle: 60s
+    current_capacity:
+      name: "${short_name} current capacity"
+      filters:
+        - throttle: 60s
+    status:
+      name: "${short_name} status"
+      filters:
+        - throttle: 60s
+        - lambda: |-
+            ESP_LOGD("${short_name} ${mac_address}", "Status changed to 0");
+            if (x == 0) {
+              id(ble_client_switch${device}).turn_off();
+              id(ble_client_switch${device}).turn_on();
+            }
+            return x;
+    afestatus:
+      name: "${short_name} afe status"
+      filters:
+        - throttle: 60s
+    min_cell_voltage:
+      name: "${short_name} min cell voltage"
+      filters:
+        - throttle: 60s
+    max_cell_voltage:
+      name: "${short_name} max cell voltage"
+      filters:
+        - throttle: 60s
+    min_voltage_cell:
+      name: "${short_name} min voltage cell"
+      filters:
+        - throttle: 60s
+    max_voltage_cell:
+      name: "${short_name} max voltage cell"
+      filters:
+        - throttle: 60s
+    delta_cell_voltage:
+      name: "${short_name} delta cell voltage"
+      filters:
+        - throttle: 60s
+    temperature:
+      name: "${short_name} temperature"
+      filters:
+        - throttle: 60s
+    cell_voltage_1:
+      name: "${short_name} cell voltage 1"
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+    cell_voltage_2:
+      name: "${short_name} cell voltage 2"
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+    cell_voltage_3:
+      name: "${short_name} cell voltage 3"
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+    cell_voltage_4:
+      name: "${short_name} cell voltage 4"
+      filters:
+        - throttle_average: ${throttle_time}
+        - filter_out: nan
+
+switch:
+  - platform: ble_client
+    ble_client_id: client${device}
+    id: ble_client_switch${device}
+    name: "${short_name} enable bluetooth connection"
+
+text_sensor:
+  - platform: kilovault_bms_ble
+    kilovault_bms_ble_id: bms${device}
+    battery_mac:
+      name: "${short_name} battery MAC"
+  - platform: kilovault_bms_ble
+    kilovault_bms_ble_id: bms${device}
+    message:
+      name: "${short_name} message"
+  

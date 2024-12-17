@@ -1,0 +1,152 @@
+substitutions:
+  name: esp-kv-bms
+  short_name: kv-bms
+  external_components_source: "../my_components"
+  device_description: "Monitor a Kilovault Battery Management System via BLE"
+  throttle_time: 10s
+
+esphome:
+  name: ${name}
+  comment: ${device_description}
+
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf
+
+external_components:
+  - source: ${external_components_source}
+    refresh: 0s
+
+wifi:
+  networks:
+  - ssid: Blacksmith
+    password: !secret wifi_password
+
+debug:
+  update_interval: 5s
+
+api:
+  encryption:
+    key: !secret key
+
+ota:
+  platform: esphome
+  password: !secret ota_password
+  on_begin:
+    then:
+    - switch.turn_off: ble_client_switch01
+    - switch.turn_off: ble_client_switch02
+    
+logger:
+  baud_rate: 0
+  level: DEBUG
+  logs:
+    esp32_ble_tracker: INFO
+    esp32_ble_client: INFO
+    #jk_bms_ble: INFO
+    
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+#esp32_ble_tracker:
+#  scan_parameters:
+#    # Defaults
+#    #duration: 300s
+#    #interval: 320ms
+#    #window: 30ms
+#    #active: true
+#    #continous: true
+#    interval: 640ms
+#    window: 20ms
+#    active: false
+#  on_ble_advertise:
+#    then:
+#      - lambda: |-
+#          ESP_LOGI("ble_adv", "New device found");
+#          ESP_LOGI("ble_adv", "  Name: %s", x.get_name().c_str());
+#          ESP_LOGI("ble_adv", "  MAC address: %s", x.address_str().c_str());
+#          ESP_LOGD("ble_adv", "  Advertised service UUIDs:");
+#          for (auto uuid : x.get_service_uuids()) {
+#            ESP_LOGD("ble_adv", "    - %s", uuid.to_string().c_str());
+#          }
+
+packages:
+  jk-bms1: !include
+    file: kv-bms.yaml
+    vars:
+      device: '01'
+      mac_address: 30:45:11:FB:0A:52
+      protocol_version: JK02_32S
+      short_name: battery1
+  jk-bms2: !include
+    file: kv-bms.yaml
+    vars:
+      device: '02'
+      mac_address: 50:33:8B:12:69:42
+      protocol_version: JK02_32S
+      short_name: battery2
+
+binary_sensor:
+  - platform: status
+    name: "${short_name} Status"
+    
+sensor:
+  - platform: debug
+    free:
+      name: "${short_name} Heap Free"
+    loop_time:
+      name: "${short_name} Loop Time"
+  - platform: wifi_signal
+    name: "${short_name} WiFi Signal"
+    update_interval: 60s
+  - platform: uptime
+    disabled_by_default: true
+    name: "${short_name} uptime seconds"
+    id: uptime_s
+
+switch:
+  - platform: shutdown
+    name: "${short_name} Shutdown"
+  - platform: safe_mode
+    name: "${short_name} Restart (Safe Mode)"
+  - platform: restart
+    id: restart_device
+    name: "${short_name} Restart"
+
+text_sensor:
+  - platform: debug
+    device:
+      name: "${short_name} Device Info"
+    reset_reason:
+      name: "${short_name} Reset Reason"
+  - platform: wifi_info
+    ip_address:
+      name: "${short_name} IP Address"
+    ssid:
+      name: "${short_name} SSID"
+  - platform: template
+    name: "${short_name} uptime"
+    lambda: |-
+      uint32_t dur = id(uptime_s).state;
+      int dys = 0;
+      int hrs = 0;
+      int mnts = 0;
+      if (dur > 86399) {
+        dys = trunc(dur / 86400);
+        dur = dur - (dys * 86400);
+      }
+      if (dur > 3599) {
+        hrs = trunc(dur / 3600);
+        dur = dur - (hrs * 3600);
+      }
+      if (dur > 59) {
+        mnts = trunc(dur / 60);
+        dur = dur - (mnts * 60);
+      }
+      char buffer[60];
+      sprintf(buffer, "%ud %02uh %02um %02us", dys, hrs, mnts, dur);
+      return {buffer};
+    icon: mdi:clock-start
+   
