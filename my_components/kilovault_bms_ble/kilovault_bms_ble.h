@@ -76,6 +76,10 @@ class KilovaultBmsBle : public esphome::ble_client::BLEClientNode, public Pollin
     battery_mac_text_sensor_ = battery_mac_text_sensor;
   }
 
+  void set_message_text_sensor(text_sensor::TextSensor *message_text_sensor) {
+    message_text_sensor_ = message_text_sensor;
+  }
+
   void write_register(uint8_t address, uint16_t value);
 
  protected:
@@ -99,6 +103,7 @@ class KilovaultBmsBle : public esphome::ble_client::BLEClientNode, public Pollin
   sensor::Sensor *temperature_sensor_;
 
   text_sensor::TextSensor *battery_mac_text_sensor_;
+  text_sensor::TextSensor *message_text_sensor_;
 
   struct Cell {
     sensor::Sensor *cell_voltage_sensor_{nullptr};

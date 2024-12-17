@@ -10,15 +10,23 @@ DEPENDENCIES = ["kilovault_bms_ble"]
 CODEOWNERS = ["@syssi"]
 
 CONF_BATTERY_MAC = "battery_mac"
+CONF_MESSAGE = "message"
 
 TEXT_SENSORS = [
     CONF_BATTERY_MAC,
+    CONF_MESSAGE,
 ]
 
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_KILOVAULT_BMS_BLE_ID): cv.use_id(KilovaultBmsBle),
         cv.Optional(CONF_BATTERY_MAC): text_sensor.TEXT_SENSOR_SCHEMA.extend(
+            {
+                cv.GenerateID(): cv.declare_id(text_sensor.TextSensor),
+                cv.Optional(CONF_ICON, default=ICON_EMPTY): cv.icon,
+            }
+        ),
+        cv.Optional(CONF_MESSAGE): text_sensor.TEXT_SENSOR_SCHEMA.extend(
             {
                 cv.GenerateID(): cv.declare_id(text_sensor.TextSensor),
                 cv.Optional(CONF_ICON, default=ICON_EMPTY): cv.icon,

@@ -168,7 +168,15 @@ void KilovaultBmsBle::decode_status_data_(const std::vector<uint8_t> &data) {
 
   //ESP_LOGI(TAG, "Status frame (%d+4 bytes):", data.size());
   //ESP_LOGD(TAG, "  %s", format_hex_pretty(&data.front(), data.size()).c_str());
-  this->publish_state_(this->message_text_sensor_, format_hex_pretty(&data.front(), 80).c_str());
+  //this->publish_state_(this->message_text_sensor_, format_hex_pretty(&data.front(), 80).c_str());
+  this->publish_state_(this->afestatus_sensor_, kilovault_get_16bit(41));
+
+  int16_t status = kilovault_get_16bit(37);
+  this->publish_state_(this->status_sensor_, status);
+
+  if (status == 0) {
+    return;
+  }
 
   int32_t current = kilovault_get_32bit(9);
   if (current > 2147483647) {
@@ -198,10 +206,6 @@ void KilovaultBmsBle::decode_status_data_(const std::vector<uint8_t> &data) {
   // temp is in Kelvin covert to Celius
   int16_t temp = kilovault_get_16bit(33);
   this->publish_state_(this->temperature_sensor_, (temp * 0.1f) - 273.15);
-
-  this->publish_state_(this->status_sensor_, kilovault_get_16bit(37));
-
-  this->publish_state_(this->afestatus_sensor_, kilovault_get_16bit(41));
 
   this->decode_cell_voltages_data_(data);
 
